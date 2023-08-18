@@ -1,6 +1,6 @@
 # **Optimize Lambda Function For Cost and Performance**
 
-This lab is provided as part of **[AWS Innovate For Every Application Edition](https://aws.amazon.com/events/aws-innovate/apj/for-every-app/)**
+This lab is provided as part of **[AWS Innovate For Every Application Edition](https://aws.amazon.com/events/aws-innovate/apj/for-every-app/)**, it has been adapted from this [workshop](https://catalog.workshops.aws/serverless-optimization/en-US)
 
 Click [here](https://github.com/phonghuule/aws-innovate-fea-2022) to explore the full list of hands-on labs.
 
@@ -39,7 +39,7 @@ Sign in to the AWS Management Console as an IAM user who has PowerUserAccess or 
 
 4. Select the **aws-lambda-power-tuning application**.
 
-![](/Images/sar-deploy.png)
+![](/Images/power-tuning-search-page.png)
 
 5. On the **Review, configure and deploy** page, leave the defaults for everything. Scroll to the bottom, check the **I acknowledge that this app creates custom IAM roles** option and click on **Deploy**
 
@@ -61,7 +61,7 @@ Now that you have the power tuning tool installed, the next step is to run an AW
 ![](/Images/power-tuning-create-function.png)
 3. On the **Create function** page input the following values, leave the rest at their default values and click **Create Function**.
 - Author from scratch: selected
-- Function Name: lambda-power-tuning-test
+- Function Name: ```lambda-power-tuning-test```
 - Runtime: Python 3.8
 - Architecture: x86_64
 
@@ -80,11 +80,57 @@ Now that you have the power tuning tool installed, the next step is to run an AW
 - AWS layers: AWSLambda-Python38-SciPy1x selected
 - Version: latest version available selected
 
-![](/Images/add-layer.png)
+![](/Images/layer-detail.png)
 
 7. Locate the **Function Code** pane and paste the following code into the editor screen.
 
 ![](/Images/power-tuning-add-function-code.png)
+
+```
+import json
+import numpy as np
+from scipy.spatial import ConvexHull
+
+def lambda_handler(event, context):
+
+    ms = 100
+    print("Printing from version on 10302020 - size of matrix", ms,"x",ms)
+
+    print("\nFilling the matrix with random integers below 100\n")
+
+    matrix_a = np.random.randint(100, size=(ms, ms))
+    print(matrix_a)
+
+    print("random matrix_b =")
+    matrix_b = np.random.randint(100, size=(ms, ms))
+    print(matrix_b)
+
+    print("matrix_a * matrix_b = ")
+    print(matrix_a.dot(matrix_b))
+
+    num_points = 10
+    print(num_points, "random points:")
+    points = np.random.rand(num_points, 2)
+    for i, point in enumerate(points):
+        print(i, '->', point)
+
+    hull = ConvexHull(points)
+    print("The smallest convex set containing all",
+        num_points, "points has", len(hull.simplices),
+        "sides,\nconnecting points:")
+    for simplex in hull.simplices:
+        print(simplex[0], '<->', simplex[1])
+
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+        },
+        'body': '',
+        "isBase64Encoded": False
+    }
+```
 
 8. Click **Deploy** to deploy the new code for the function
 
@@ -134,6 +180,17 @@ Now that you have deployed the power tuning tool and a test Lambda function, it'
 ![](/Images/state-machine-detail.png)
 
 5. A **Start execution** window will open. Replace the information in the **Input** field with the json below. Make sure to replace the value of the **lambdaARN** field with the ARN you copied in the previous stage. Then click the Start execution button.
+
+```
+{
+	"lambdaARN": "YOUR LAMBDA ARN HERE",
+	"powerValues": [128, 256, 512, 1024, 2048, 3008],
+	"num": 10,
+	"payload": "{}",
+	"parallelInvocation": true,
+	"strategy": "cost"
+}
+```
 
 ![](/Images/execution-info.png)
 
